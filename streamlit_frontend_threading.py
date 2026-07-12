@@ -10,6 +10,12 @@ def generate_thread_id():
     return thread_id
 
 
+def reset_chat():
+    thread_id = generate_thread_id()
+    st.session_state["thread_id"] = thread_id
+    st.session_state["message_history"] = []
+
+
 # st.session_state -> dict -> a special type of dict for streamlit which store data for the particular session
 # once we manualy refresh the page then data will be erased otherwise it will be present in temp memory
 # ************************************************** Session Setup *******************************************************
@@ -22,7 +28,8 @@ if "thread_id" not in st.session_state:
 # ************************************************** Sidebar Ui *******************************************************
 st.sidebar.title("LangGraph Chatbot")
 
-st.sidebar.button("New Chat")
+if st.sidebar.button("New Chat"):
+    reset_chat()
 
 st.sidebar.header("My Conversation")
 
@@ -35,8 +42,6 @@ for message in st.session_state["message_history"]:
     with st.chat_message(message["role"]):
         st.text(message["content"])
 
-# {"role": "user", "content": "Hi.."}
-# {"role": "assistant", "content": "Your res.."}
 
 user_input = st.chat_input("Type here")
 
