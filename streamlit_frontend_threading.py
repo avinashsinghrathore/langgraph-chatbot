@@ -1,15 +1,34 @@
 import streamlit as st
 from langgraph_backend import chatbot
 from langchain_core.messages import HumanMessage
+import uuid
+
+
+# ************************************************** Utility Functions *******************************************************
+def generate_thread_id():
+    thread_id = uuid.uuid4()
+    return thread_id
+
 
 # st.session_state -> dict -> a special type of dict for streamlit which store data for the particular session
 # once we manualy refresh the page then data will be erased otherwise it will be present in temp memory
-CONFIG = {"configurable": {"thread_id": "thread-1"}}
 # ************************************************** Session Setup *******************************************************
 if "message_history" not in st.session_state:
     st.session_state["message_history"] = []
 
-message_history = []
+if "thread_id" not in st.session_state:
+    st.session_state["thread_id"] = generate_thread_id()
+
+# ************************************************** Sidebar Ui *******************************************************
+st.sidebar.title("LangGraph Chatbot")
+
+st.sidebar.button("New Chat")
+
+st.sidebar.header("My Conversation")
+
+st.sidebar.text(st.session_state["thread_id"])
+
+# message_history = []
 # ************************************************** Main Ui *******************************************************
 # load the conversation history
 for message in st.session_state["message_history"]:
@@ -21,22 +40,26 @@ for message in st.session_state["message_history"]:
 
 user_input = st.chat_input("Type here")
 
-if user_input: 
+if user_input:
 
     # first add the message to the message history
     st.session_state["message_history"].append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.text(user_input)
 
+    CONFIG = {"configurable": {"thread_id": st.session_state["thread_id"]}}
+
     # first add the message to the message history
     with st.chat_message("assistant"):
-    # implemented streaming code from here
+        # implemented streaming code from here
         ai_message = st.write_stream(
             message_chunk.content
             for message_chunk, metadata in chatbot.stream(
                 {"messages": [HumanMessage(content=user_input)]},
-                config={"configurable": {"thread_id": "thread-1"}},
+                config=CONFIG,
                 stream_mode="messages",
             )
         )
-    st.session_state["message_history"].append({"role": "assistant", "content": ai_message})
+    st.session_state["message_history"].append(
+        {"role": "assistant", "content": ai_message}
+    )
